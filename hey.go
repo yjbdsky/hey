@@ -29,7 +29,14 @@ import (
 	"strings"
 	"time"
 
+	"log"
+
+	"github.com/gogo/protobuf/proto"
+	"github.com/golang/snappy"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/prometheus/common/model"
 	"github.com/rakyll/hey/requester"
+	"github.com/yjbdsky/hey/prometheus"
 )
 
 const (
@@ -39,14 +46,15 @@ const (
 )
 
 var (
-	m           = flag.String("m", "GET", "")
-	headers     = flag.String("h", "", "")
-	body        = flag.String("d", "", "")
-	bodyFile    = flag.String("D", "", "")
-	accept      = flag.String("A", "", "")
-	contentType = flag.String("T", "text/html", "")
-	authHeader  = flag.String("a", "", "")
-	hostHeader  = flag.String("host", "", "")
+	m                 = flag.String("m", "GET", "")
+	headers           = flag.String("h", "", "")
+	body              = flag.String("d", "", "")
+	bodyFile          = flag.String("D", "", "")
+	prometheusFileNum = flag.Int("p", 0, "按prometheus remote storage格式发送,并按-D输入的指标倍乘发送")
+	accept            = flag.String("A", "", "")
+	contentType       = flag.String("T", "text/html", "")
+	authHeader        = flag.String("a", "", "")
+	hostHeader        = flag.String("host", "", "")
 
 	output = flag.String("o", "", "")
 
@@ -86,6 +94,7 @@ Options:
   -A  HTTP Accept header.
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
+  -p  按prometheus remote storage格式发送,并按-D输入的指标倍乘发送
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
@@ -178,6 +187,35 @@ func main() {
 			errAndExit(err.Error())
 		}
 		bodyAll = slurp
+		if *prometheusFileNum > 0 {
+			// var tmp []model.Sample
+			var sample []*model.Sample
+			err = jsoniter.Unmarshal(bodyAll, &sample)
+			if err != nil {
+				log.Println("format json err:", err)
+				return
+			}
+			//log.Println(sample[0])
+			//log.Println("sample:", sample)
+			if *prometheusFileNum > 1 {
+				tmp := sample
+				for i := 0; i < *prometheusFileNum; i++ {
+					for _, v := range tmp {
+						sample = append(sample, v)
+					}
+				}
+			}
+			log.Println("metric len:", len(sample))
+			promReq := remote.ToWriteRequest(sample)
+			data, err := proto.Marshal(promReq)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			bodyAll = snappy.Encode(nil, data)
+			///return
+		}
+
 	}
 
 	var proxyURL *gourl.URL
@@ -201,6 +239,11 @@ func main() {
 	// set host header if set
 	if *hostHeader != "" {
 		req.Host = *hostHeader
+	}
+	if *prometheusFileNum > 0 {
+		req.Header.Add("Content-Encoding", "snappy")
+		req.Header.Set("Content-Type", "application/x-protobuf")
+		req.Header.Set("X-Prometheus-Remote-Write-Version", "0.1.0")
 	}
 
 	ua := req.UserAgent()
