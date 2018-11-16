@@ -199,7 +199,7 @@ func main() {
 			//log.Println("sample:", sample)
 			if *prometheusFileNum > 1 {
 				tmp := sample
-				for i := 0; i < *prometheusFileNum; i++ {
+				for i := 1; i < *prometheusFileNum; i++ {
 					for _, v := range tmp {
 						sample = append(sample, v)
 					}
