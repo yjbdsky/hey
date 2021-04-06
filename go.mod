@@ -1,4 +1,4 @@
-module github.com/yjbdsky/hey
+module github.com/rakyll/hey
 
 require (
 	github.com/cespare/xxhash v1.1.0 // indirect
@@ -12,6 +12,8 @@ require (
 	golang.org/x/net v0.0.0-20191002035440-2ec189313ef0
 	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a // indirect
 	google.golang.org/grpc v1.25.1 // indirect
+	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb
+	golang.org/x/text v0.3.2 // indirect
 )
 
 go 1.13

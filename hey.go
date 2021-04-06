@@ -46,15 +46,16 @@ const (
 )
 
 var (
-	m                 = flag.String("m", "GET", "")
-	headers           = flag.String("h", "", "")
-	body              = flag.String("d", "", "")
-	bodyFile          = flag.String("D", "", "")
+	m           = flag.String("m", "GET", "")
+	headers     = flag.String("h", "", "")
+	body        = flag.String("d", "", "")
+	bodyFile    = flag.String("D", "", "")
 	prometheusFileNum = flag.Int("p", 0, "按prometheus remote storage格式发送,并按-D输入的指标倍乘发送")
-	accept            = flag.String("A", "", "")
-	contentType       = flag.String("T", "text/html", "")
-	authHeader        = flag.String("a", "", "")
-	hostHeader        = flag.String("host", "", "")
+	accept      = flag.String("A", "", "")
+	contentType = flag.String("T", "text/html", "")
+	authHeader  = flag.String("a", "", "")
+	hostHeader  = flag.String("host", "", "")
+	userAgent   = flag.String("U", "", "")
 
 	output = flag.String("o", "", "")
 
@@ -77,9 +78,9 @@ var usage = `Usage: hey [options...] <url>
 
 Options:
   -n  Number of requests to run. Default is 200.
-  -c  Number of requests to run concurrently. Total number of requests cannot
+  -c  Number of workers to run concurrently. Total number of requests cannot
       be smaller than the concurrency level. Default is 50.
-  -q  Rate limit, in queries per second (QPS). Default is no rate limit.
+  -q  Rate limit, in queries per second (QPS) per worker. Default is no rate limit.
   -z  Duration of application to send requests. When duration is reached,
       application stops and exits. If duration is specified, n is ignored.
       Examples: -z 10s -z 3m.
@@ -94,7 +95,6 @@ Options:
   -A  HTTP Accept header.
   -d  HTTP request body.
   -D  HTTP request body from file. For example, /home/user/file.txt or ./file.txt.
-  -p  按prometheus remote storage格式发送,并按-D输入的指标倍乘发送
   -T  Content-type, defaults to "text/html".
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
@@ -246,13 +246,20 @@ func main() {
 		req.Header.Set("X-Prometheus-Remote-Write-Version", "0.1.0")
 	}
 
-	ua := req.UserAgent()
+	ua := header.Get("User-Agent")
 	if ua == "" {
 		ua = heyUA
 	} else {
 		ua += " " + heyUA
 	}
 	header.Set("User-Agent", ua)
+
+	// set userAgent header if set
+	if *userAgent != "" {
+		ua = *userAgent + " " + heyUA
+		header.Set("User-Agent", ua)
+	}
+
 	req.Header = header
 
 	w := &requester.Work{
