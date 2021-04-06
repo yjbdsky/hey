@@ -35,8 +35,8 @@ import (
 	"github.com/golang/snappy"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/prometheus/common/model"
-	"github.com/rakyll/hey/requester"
 	"github.com/yjbdsky/hey/prometheus"
+	"github.com/yjbdsky/hey/requester"
 )
 
 const (
@@ -46,16 +46,16 @@ const (
 )
 
 var (
-	m           = flag.String("m", "GET", "")
-	headers     = flag.String("h", "", "")
-	body        = flag.String("d", "", "")
-	bodyFile    = flag.String("D", "", "")
+	m                 = flag.String("m", "GET", "")
+	headers           = flag.String("h", "", "")
+	body              = flag.String("d", "", "")
+	bodyFile          = flag.String("D", "", "")
 	prometheusFileNum = flag.Int("p", 0, "按prometheus remote storage格式发送,并按-D输入的指标倍乘发送")
-	accept      = flag.String("A", "", "")
-	contentType = flag.String("T", "text/html", "")
-	authHeader  = flag.String("a", "", "")
-	hostHeader  = flag.String("host", "", "")
-	userAgent   = flag.String("U", "", "")
+	accept            = flag.String("A", "", "")
+	contentType       = flag.String("T", "text/html", "")
+	authHeader        = flag.String("a", "", "")
+	hostHeader        = flag.String("host", "", "")
+	userAgent         = flag.String("U", "", "")
 
 	output = flag.String("o", "", "")
 
